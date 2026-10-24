@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hu-king · 我的小宇宙</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👑</text></svg>" />
+<style>
+/* ========== 主题变量（想换配色改这里） ========== */
+:root{
+  --bg:#0b0e1a;
+  --text:#eef1ff;
+  --text-dim:#9aa3c7;
+  --card:rgba(255,255,255,.06);
+  --card-border:rgba(255,255,255,.12);
+  --nav-bg:rgba(15,18,35,.6);
+  --accent:#7c6cff;
+  --accent2:#37e2d5;
+  --accent3:#ff7ac6;
+  --glow:rgba(124,108,255,.35);
+  --bar-bg:rgba(255,255,255,.08);
+}
+html[data-theme="light"]{
+  --bg:#f4f6fc;
+  --text:#1c2233;
+  --text-dim:#5b6480;
+  --card:rgba(255,255,255,.72);
+  --card-border:rgba(30,40,80,.1);
+  --nav-bg:rgba(255,255,255,.65);
+  --accent:#6a55f2;
+  --accent2:#0fbdb2;
+  --accent3:#f2569f;
+  --glow:rgba(106,85,242,.22);
+  --bar-bg:rgba(30,40,80,.1);
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:"Segoe UI","PingFang SC","Microsoft YaHei",-apple-system,sans-serif;
+  background:var(--bg);color:var(--text);
+  overflow-x:hidden;transition:background .5s,color .5s;
+  line-height:1.7;
+}
+::selection{background:var(--accent);color:#fff}
+::-webkit-scrollbar{width:10px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--accent),var(--accent3));border-radius:99px}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit}
+
+/* ========== 背景：光斑 + 粒子画布 ========== */
+.blob{position:fixed;border-radius:50%;filter:blur(100px);z-index:-3;opacity:.5;pointer-events:none}
+.blob1{width:520px;height:520px;background:radial-gradient(circle at 30% 30%,#7c6cff,transparent 65%);top:-140px;left:-120px;animation:drift1 26s ease-in-out infinite alternate}
+.blob2{width:460px;height:460px;background:radial-gradient(circle at 60% 40%,#37e2d5,transparent 65%);bottom:-160px;right:-100px;animation:drift2 30s ease-in-out infinite alternate;opacity:.35}
+.blob3{width:400px;height:400px;background:radial-gradient(circle at 50% 50%,#ff7ac6,transparent 65%);top:40%;left:55%;animation:drift3 34s ease-in-out infinite alternate;opacity:.3}
+html[data-theme="light"] .blob{opacity:.25}
+@keyframes drift1{to{transform:translate(120px,90px) scale(1.15)}}
+@keyframes drift2{to{transform:translate(-100px,-120px) scale(1.1)}}
+@keyframes drift3{to{transform:translate(-140px,60px) scale(1.2)}}
+
+#bg{position:fixed;inset:0;z-index:-2;pointer-events:none}
+#fx{position:fixed;inset:0;z-index:9990;pointer-events:none}
+
+/* 鼠标光晕 */
+.cursor-glow{
+  position:fixed;width:420px;height:420px;border-radius:50%;z-index:1;
+  pointer-events:none;mix-blend-mode:screen;left:0;top:0;
+  background:radial-gradient(circle,rgba(124,108,255,.18),transparent 65%);
+  transform:translate(-50%,-50%);
+}
+html[data-theme="light"] .cursor-glow{mix-blend-mode:multiply;background:radial-gradient(circle,rgba(106,85,242,.1),transparent 65%)}
+
+/* 滚动进度条 */
+.scroll-progress{position:fixed;top:0;left:0;height:3px;width:0;z-index:9999;
+  background:linear-gradient(90deg,var(--accent2),var(--accent),var(--accent3));transition:width .1s linear}
+
+/* ========== 导航 ========== */
+nav{
+  position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:100;
+  display:flex;align-items:center;gap:6px;
+  padding:8px 12px;border-radius:999px;
+  background:var(--nav-bg);border:1px solid var(--card-border);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  box-shadow:0 8px 30px rgba(0,0,0,.15);
+  max-width:calc(100vw - 24px);
+}
+.logo{font-weight:800;font-size:1.05rem;letter-spacing:.5px;padding:4px 10px;border-radius:99px;
+  display:flex;align-items:center;gap:4px;cursor:pointer;user-select:none;white-space:nowrap}
+.logo:hover{background:var(--card)}
+.logo-crown{display:inline-block;animation:crownWobble 2.4s ease-in-out infinite}
+@keyframes crownWobble{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}
+.logo.spin .logo-crown{animation:spinCrown .6s ease 3}
+@keyframes spinCrown{to{transform:rotate(360deg)}}
+.nav-links{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.nav-links::-webkit-scrollbar{display:none}
+.nav-link{padding:6px 14px;border-radius:99px;font-size:.9rem;color:var(--text-dim);white-space:nowrap;transition:all .25s}
+.nav-link:hover{color:var(--text)}
+.nav-link.active{background:linear-gradient(135deg,var(--accent),var(--accent3));color:#fff}
+.theme-toggle{border:1px solid var(--card-border);background:var(--card);border-radius:99px;
+  width:34px;height:34px;font-size:1rem;cursor:pointer;transition:transform .3s;flex-shrink:0}
+.theme-toggle:hover{transform:rotate(30deg) scale(1.08)}
+
+/* ========== 通用区块 ========== */
+main{position:relative;z-index:2}
+.section{max-width:1100px;margin:0 auto;padding:90px 22px 30px;scroll-margin-top:80px}
+.section-title{font-size:2rem;font-weight:800;text-align:center;margin-bottom:8px}
+.section-sub{text-align:center;color:var(--text-dim);margin-bottom:44px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+
+.card{
+  background:var(--card);border:1px solid var(--card-border);border-radius:20px;
+  padding:28px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  transition:transform .3s,border-color .3s,box-shadow .3s;
+}
+.card:hover{border-color:var(--accent);box-shadow:0 12px 40px var(--glow)}
+
+/* 滚动浮现 */
+.reveal{opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .7s ease}
+.reveal.visible{opacity:1;transform:none}
+.grid-3.visible .reveal,.grid-2.visible .reveal{opacity:1;transform:none}
+
+/* ========== Hero ========== */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:130px 22px 60px;position:relative}
+.avatar-wrap{position:relative;width:132px;height:132px;margin-bottom:26px}
+.ring{position:absolute;inset:-7px;border-radius:50%;
+  background:conic-gradient(var(--accent2),var(--accent),var(--accent3),var(--accent2));
+  animation:ringSpin 5s linear infinite;filter:blur(1px)}
+@keyframes ringSpin{to{transform:rotate(360deg)}}
+.avatar{position:absolute;inset:0;border-radius:50%;background:var(--bg);
+  display:flex;align-items:center;justify-content:center;font-size:4rem;animation:floatY 3.4s ease-in-out infinite}
+.crown{position:absolute;top:-16px;right:-10px;font-size:1.7rem;animation:crownWobble 2s ease-in-out infinite;z-index:2}
+@keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.greeting{color:var(--text-dim);font-size:1.05rem;margin-bottom:10px}
+.name{font-size:clamp(3rem,9vw,4.6rem);font-weight:900;letter-spacing:2px;line-height:1.2}
+.gradient-text{background:linear-gradient(90deg,var(--accent2),var(--accent),var(--accent3),var(--accent2));
+  background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:shine 5s linear infinite}
+@keyframes shine{to{background-position:200% center}}
+.party .gradient-text{animation:rainbow 1.2s linear infinite}
+@keyframes rainbow{0%{filter:hue-rotate(0)}100%{filter:hue-rotate(360deg)}}
+.typing-line{font-size:1.25rem;margin:16px 0 26px;min-height:2em;color:var(--text)}
+.caret{display:inline-block;width:3px;height:1.1em;background:var(--accent2);vertical-align:-2px;
+  margin-left:3px;animation:blink 1s step-end infinite;border-radius:2px}
+@keyframes blink{50%{opacity:0}}
+.badges{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:34px}
+.badge{padding:7px 15px;border-radius:99px;font-size:.85rem;color:var(--text-dim);
+  background:var(--card);border:1px solid var(--card-border)}
+.hero-btns{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.btn{padding:13px 30px;border-radius:99px;font-size:1rem;font-weight:600;cursor:pointer;
+  border:none;transition:transform .25s,box-shadow .25s;display:inline-block}
+.btn:hover{transform:translateY(-3px) scale(1.03)}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent3));color:#fff;
+  box-shadow:0 10px 28px var(--glow)}
+.btn-primary:hover{box-shadow:0 14px 36px var(--glow)}
+.btn-ghost{background:var(--card);color:var(--text);border:1px solid var(--card-border)}
+.scroll-hint{position:absolute;bottom:26px;display:flex;flex-direction:column;align-items:center;gap:8px;
+  color:var(--text-dim);font-size:.8rem}
+.mouse{width:24px;height:38px;border:2px solid var(--text-dim);border-radius:14px;position:relative}
+.wheel{width:4px;height:8px;background:var(--text-dim);border-radius:2px;position:absolute;
+  left:50%;top:6px;transform:translateX(-50%);animation:wheelMove 1.6s ease-in-out infinite}
+@keyframes wheelMove{0%{opacity:1;top:6px}70%{opacity:0;top:18px}100%{opacity:0;top:6px}}
+
+/* ========== 关于我 ========== */
+.about-icon{font-size:2.2rem;margin-bottom:14px;display:block}
+.card h3{font-size:1.2rem;margin-bottom:10px}
+.card p{color:var(--text-dim);font-size:.95rem}
+
+/* ========== 技能 ========== */
+.skills-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:22px;align-items:stretch}
+.bar-row{margin-bottom:20px}
+.bar-label{display:flex;justify-content:space-between;font-size:.9rem;margin-bottom:8px}
+.bar-label b{color:var(--accent2);font-family:Consolas,monospace}
+.bar{height:10px;background:var(--bar-bg);border-radius:99px;overflow:hidden}
+.bar-fill{height:100%;width:0;border-radius:99px;
+  background:linear-gradient(90deg,var(--accent2),var(--accent),var(--accent3));
+  transition:width 1.4s cubic-bezier(.22,1,.36,1);box-shadow:0 0 12px var(--glow)}
+.tag-cloud{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.tag{padding:8px 16px;border-radius:99px;background:var(--card);border:1px solid var(--card-border);
+  font-size:.88rem;cursor:default;transition:all .25s}
+.tag:hover{transform:rotate(-3deg) scale(1.1);border-color:var(--accent3);
+  background:linear-gradient(135deg,var(--accent),var(--accent3));color:#fff}
+
+/* ========== 趣味区 ========== */
+.fortune-result{font-size:1.15rem;font-weight:700;min-height:3.2em;display:flex;
+  align-items:center;justify-content:center;text-align:center;margin:18px 0;
+  padding:16px;border-radius:14px;background:var(--bar-bg)}
+.fortune-result.settled{animation:fortunePop .5s cubic-bezier(.34,1.56,.64,1)}
+@keyframes fortunePop{0%{transform:scale(.7);opacity:0}100%{transform:scale(1);opacity:1}}
+.like-btn{font-size:3.4rem;background:none;border:none;cursor:pointer;display:block;
+  margin:14px auto 8px;transition:transform .2s;filter:grayscale(.7)}
+.like-btn:hover{transform:scale(1.15);filter:grayscale(0)}
+.like-btn.pop{animation:likePop .45s cubic-bezier(.34,1.56,.64,1);filter:grayscale(0)}
+@keyframes likePop{0%{transform:scale(.6)}60%{transform:scale(1.4)}100%{transform:scale(1)}}
+.egg-hint{text-align:center;color:var(--text-dim);font-size:.88rem;margin-top:36px;
+  padding:16px;border-radius:14px;border:1px dashed var(--card-border)}
+.egg-hint b{color:var(--accent2)}
+
+/* ========== 时间线 ========== */
+.timeline{position:relative;max-width:760px;margin:44px auto 0}
+.timeline::before{content:'';position:absolute;left:50%;top:0;bottom:0;width:2px;
+  background:linear-gradient(180deg,var(--accent2),var(--accent),var(--accent3));
+  transform:translateX(-50%);opacity:.5}
+.tl-item{position:relative;width:50%;padding:10px 42px 26px 0}
+.tl-item:nth-child(even){margin-left:50%;padding:10px 0 26px 42px}
+.tl-dot{position:absolute;top:22px;width:14px;height:14px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--accent3));box-shadow:0 0 14px var(--glow);z-index:2}
+.tl-item:nth-child(odd) .tl-dot{right:-7px}
+.tl-item:nth-child(even) .tl-dot{left:-7px}
+.tl-card{padding:20px 22px}
+.tl-year{font-family:Consolas,monospace;color:var(--accent2);font-size:.85rem}
+.tl-card h4{margin:4px 0 6px;font-size:1.05rem}
+
+/* ========== 联系 ========== */
+.contact-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.contact-card{text-align:center;padding:26px 14px;cursor:pointer;display:block}
+.contact-icon{width:58px;height:58px;margin:0 auto 14px;border-radius:18px;font-size:1.7rem;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--accent),var(--accent3))}
+.contact-card h4{font-size:1rem;margin-bottom:4px}
+.contact-card span{font-size:.82rem;color:var(--text-dim)}
+
+/* ========== 页脚 / 其他 ========== */
+footer{text-align:center;padding:60px 20px 40px;color:var(--text-dim);font-size:.9rem}
+footer .heart{display:inline-block;animation:beat 1.2s ease-in-out infinite}
+@keyframes beat{0%,100%{transform:scale(1)}25%{transform:scale(1.25)}}
+.footer-dim{font-size:.8rem;margin-top:6px;opacity:.75}
+#backTop{position:fixed;right:22px;bottom:22px;width:46px;height:46px;border-radius:50%;
+  border:1px solid var(--card-border);background:var(--nav-bg);backdrop-filter:blur(10px);
+  font-size:1.2rem;cursor:pointer;z-index:100;opacity:0;pointer-events:none;transition:all .35s}
+#backTop.show{opacity:1;pointer-events:auto}
+#backTop:hover{transform:translateY(-4px)}
+.toast{position:fixed;left:50%;bottom:34px;transform:translate(-50%,80px);z-index:10000;
+  padding:12px 24px;border-radius:99px;background:var(--nav-bg);border:1px solid var(--card-border);
+  backdrop-filter:blur(12px);font-size:.92rem;box-shadow:0 10px 30px rgba(0,0,0,.25);
+  opacity:0;transition:all .4s cubic-bezier(.34,1.56,.64,1);max-width:88vw;text-align:center}
+.toast.show{transform:translate(-50%,0);opacity:1}
+
+/* ========== 响应式 ========== */
+@media (max-width:860px){
+  .grid-3{grid-template-columns:1fr}
+  .skills-grid{grid-template-columns:1fr}
+  .grid-2{grid-template-columns:1fr}
+  .contact-grid{grid-template-columns:1fr 1fr}
+  .timeline::before{left:10px}
+  .tl-item,.tl-item:nth-child(even){width:100%;margin-left:0;padding:10px 0 26px 38px}
+  .tl-item:nth-child(odd) .tl-dot,.tl-item:nth-child(even) .tl-dot{left:3px;right:auto}
+}
+@media (max-width:560px){
+  .section{padding:70px 16px 20px}
+  .section-title{font-size:1.55rem}
+  .avatar-wrap{width:110px;height:110px}
+  .avatar{font-size:3.2rem}
+  .typing-line{font-size:1.05rem}
+}
+@media (pointer:coarse){.cursor-glow{display:none}}
+</style>
+</head>
+<body>
+
+<div class="blob blob1"></div><div class="blob blob2"></div><div class="blob blob3"></div>
+<canvas id="bg"></canvas>
+<div class="cursor-glow" id="cursorGlow"></div>
+<canvas id="fx"></canvas>
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<nav>
+  <a href="#home" class="logo" id="logo"><span class="logo-crown">👑</span>Hu·king</a>
+  <div class="nav-links">
+    <a href="#about" class="nav-link">关于</a>
+    <a href="#skills" class="nav-link">技能</a>
+    <a href="#fun" class="nav-link">趣味</a>
+    <a href="#timeline" class="nav-link">时间线</a>
+    <a href="#contact" class="nav-link">联系</a>
+  </div>
+  <button class="theme-toggle" id="themeToggle" title="切换深浅主题">🌙</button>
+</nav>
+
+<main>
+<!-- ============ 首屏 ============ -->
+<section class="hero" id="home">
+  <div class="avatar-wrap">
+    <div class="ring"></div>
+    <div class="avatar">🐯</div>
+    <div class="crown">👑</div>
+  </div>
+  <p class="greeting" id="greeting">👋 你好呀，欢迎来到我的小宇宙</p>
+  <h1 class="name gradient-text">Hu-king</h1>
+  <p class="typing-line">我是 <span id="typed"></span><span class="caret"></span></p>
+  <div class="badges">
+    <span class="badge">📍 地球 · 中国</span>
+    <span class="badge" id="daysAlive">🎂 已存活 ---- 天</span>
+    <span class="badge">☕ 咖啡因驱动生物</span>
+  </div>
+  <div class="hero-btns">
+    <a class="btn btn-primary" href="#about">👇 认识我</a>
+    <a class="btn btn-ghost" href="#contact">📬 找我玩</a>
+  </div>
+  <div class="scroll-hint"><div class="mouse"><div class="wheel"></div></div><span>往下滑更精彩</span></div>
+</section>
+
+<!-- ============ 关于 ============ -->
+<section class="section" id="about">
+  <h2 class="section-title reveal">👋 关于我</h2>
+  <p class="section-sub reveal">三张卡片，快速了解这个奇怪的生物</p>
+  <div class="grid-3">
+    <div class="card tilt reveal">
+      <span class="about-icon">🧑‍🚀</span>
+      <h3>我是谁</h3>
+      <p>一个对世界充满好奇心的人。白天写代码，晚上看星星，偶尔发呆思考人生。喜欢把无聊的事情变得有趣一点。</p>
+    </div>
+    <div class="card tilt reveal">
+      <span class="about-icon">🛠️</span>
+      <h3>我在折腾什么</h3>
+      <p>正在学习如何把想法变成现实——从网页、小程序到一顿像样的晚饭，什么都想亲手试一试。相信动手是最好的学习方式。</p>
+    </div>
+    <div class="card tilt reveal">
+      <span class="about-icon">✨</span>
+      <h3>我相信</h3>
+      <p>生活需要一点仪式感，也需要一点幽默感。保持热爱，奔赴山海；保持好奇，永不毕业。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 技能 ============ -->
+<section class="section" id="skills">
+  <h2 class="section-title reveal">🛠️ 技能面板</h2>
+  <p class="section-sub reveal">认真练过的，和瞎点亮的</p>
+  <div class="skills-grid">
+    <div class="card reveal" id="barsCard">
+      <div class="bar-row"><div class="bar-label"><span>睡觉</span><b>90%</b></div><div class="bar"><div class="bar-fill" data-w="90"></div></div></div>
+      <div class="bar-row"><div class="bar-label"><span>物理</span><b>75%</b></div><div class="bar"><div class="bar-fill" data-w="75"></div></div></div>
+      <div class="bar-row"><div class="bar-label"><span>三角洲行动</span><b>65%</b></div><div class="bar"><div class="bar-fill" data-w="65"></div></div></div>
+      <div class="bar-row"><div class="bar-label"><span>英语阅读</span><b>60%</b></div><div class="bar"><div class="bar-fill" data-w="60"></div></div></div>
+      <div class="bar-row" style="margin-bottom:0"><div class="bar-label"><span>摸鱼学</span><b>100%</b></div><div class="bar"><div class="bar-fill" data-w="100"></div></div></div>
+    </div>
+    <div class="card reveal">
+      <h3>🎯 副技能树</h3>
+      <p>点一点下面这些标签，会有惊喜（并没有）</p>
+      <div class="tag-cloud">
+        <span class="tag">🎮 游戏</span><span class="tag">📷 摄影</span><span class="tag">🎵 音乐</span>
+        <span class="tag">🍜 煮泡面加蛋</span><span class="tag">🐱 云吸猫</span><span class="tag">📚 闲书</span>
+        <span class="tag">✈️ 旅行</span><span class="tag">💤 高质量睡眠</span><span class="tag">🎬 电影</span>
+        <span class="tag">🏀 偶尔运动</span><span class="tag">🧩 解谜</span><span class="tag">🌳 逛公园</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 趣味区 ============ -->
+<section class="section" id="fun">
+  <h2 class="section-title reveal">🎮 趣味开发区</h2>
+  <p class="section-sub reveal">本人亲自测试，均可在 3 秒内获得快乐</p>
+  <div class="grid-2">
+    <div class="card reveal">
+      <h3>🧧 今日运势</h3>
+      <p>心诚则灵，每日一签（重复抽不退款）</p>
+      <div class="fortune-result" id="fortuneResult">点下面的按钮，窥探一下今天 ☝️</div>
+      <button class="btn btn-primary" id="fortuneBtn">🎯 抽签</button>
+    </div>
+    <div class="card reveal" style="text-align:center">
+      <h3>❤️ 点赞补给站</h3>
+      <p>听说点赞的人今天会有好运～</p>
+      <button class="like-btn" id="likeBtn" title="点我点我">🫶</button>
+      <p id="likeLabel">还没有人点过赞（等你哦）</p>
+    </div>
+  </div>
+  <p class="egg-hint reveal">🕵️ 情报：本页藏着 <b>3 个彩蛋</b> —— 一个藏在控制台里；一个需要手速（↑↑↓↓←→←→BA）；还有一个嘛……多点点左上角的 Logo 试试？</p>
+</section>
+
+<!-- ============ 时间线 ============ -->
+<section class="section" id="timeline">
+  <h2 class="section-title reveal">🧭 我的时间线</h2>
+  <p class="section-sub reveal">一部未完待续的连载</p>
+  <div class="timeline">
+    <div class="tl-item reveal"><div class="tl-dot"></div><div class="tl-card card">
+      <span class="tl-year">2006 · v1.0</span><h4>人生程序首次运行</h4><p>带着出厂设置来到地球，从此开始永不停机的冒险。</p>
+    </div></div>
+    <div class="tl-item reveal"><div class="tl-dot"></div><div class="tl-card card">
+      <span class="tl-year">2008 · v5.0</span><h4>点亮语言系统</h4><p>解锁初始技能「瞎说」</p>
+    </div></div>
+    <div class="tl-item reveal"><div class="tl-dot"></div><div class="tl-card card">
+      <span class="tl-year">2022 · v15.0</span><h4>Hello, World!</h4><p>写下人生第一行代码。屏幕上蹦出那两个单词的瞬间，感觉打开了新世界的大门。</p>
+    </div></div>
+    <div class="tl-item reveal"><div class="tl-dot"></div><div class="tl-card card">
+      <span class="tl-year">现在 · ∞</span><h4>故事仍在继续</h4><p>正在把这个小破站越写越好。下一章是什么？我自己也很期待。</p>
+    </div></div>
+  </div>
+</section>
+
+<!-- ============ 联系 ============ -->
+<section class="section" id="contact">
+  <h2 class="section-title reveal">📮 找到我</h2>
+  <p class="section-sub reveal">欢迎来聊，看到就会回</p>
+  <div class="contact-grid">
+    <a class="contact-card card reveal" href="https://github.com/huyue66666" target="_blank" rel="noopener">
+      <div class="contact-icon">🐙</div><h4>GitHub</h4><span>@huyue66666</span>
+    </a>
+    <a class="contact-card card reveal" href="https://space.bilibili.com" target="_blank" rel="noopener">
+      <div class="contact-icon">📺</div><h4>Bilibili</h4><span>同名账号</span>
+    </a>
+    <div class="contact-card card reveal" id="wechatCard">
+      <div class="contact-icon">💬</div><h4>微信</h4><span>点我查看微信号</span>
+    </div>
+    <a class="contact-card card reveal" href="mailto:hello@example.com">
+      <div class="contact-icon">📮</div><h4>邮箱</h4><span>hello@example.com</span>
+    </a>
+  </div>
+</section>
+</main>
+
+<footer>
+  <p>© 2026 Hu-king · 用 <span class="heart">❤️</span> + ☕ + 🎵 手工打造</p>
+  <p class="footer-dim" id="visitCount"></p>
+  <p class="footer-dim">纯 HTML / CSS / JS · 零框架 · 零依赖 ✨</p>
+</footer>
+
+<button id="backTop" title="回到顶部">🚀</button>
+<div id="toast" class="toast"></div>
+
+<script>
+/* ================================================================
+   ★★★ 个性化配置 —— 想改成你自己的，改这里就够了 ★★★
+================================================================ */
+const CONFIG = {
+  name: "Hu-king",
+  birthday: "2006-02-24",          // 你的生日（用于计算"已存活天数"）
+  roles: [                          // 打字机会轮播的身份
+    "一只爱折腾的开发者 🛠️",
+    "夜猫子荣誉选手 🦉",
+    "咖啡因驱动生物 ☕",
+    "终身学习预备役 📚",
+    "业余快门摄影师 📷",
+  ],
+  wechat: "Hu-king-001",              // 你的微信号
+  eggsFound: 0,
+};
+
+const $  = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+/* ---------- 主题切换 ---------- */
+const themeBtn = $("#themeToggle");
+function applyThemeIcon(){
+  themeBtn.textContent = document.documentElement.dataset.theme === "light" ? "☀️" : "🌙";
+}
+const savedTheme = localStorage.getItem("hk_theme");
+if (savedTheme) document.documentElement.dataset.theme = savedTheme;
+applyThemeIcon();
+themeBtn.addEventListener("click", () => {
+  const next = document.documentElement.dataset.theme === "light" ? "dark" : "light";
+  document.documentElement.dataset.theme = next;
+  localStorage.setItem("hk_theme", next);
+  applyThemeIcon();
+});
+
+/* ---------- 背景粒子（星座连线） ---------- */
+const bg = $("#bg"), bctx = bg.getContext("2d");
+let stars = [], W, H;
+function initBg(){
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  W = innerWidth; H = innerHeight;
+  bg.width = W * dpr; bg.height = H * dpr;
+  bg.style.width = W + "px"; bg.style.height = H + "px";
+  bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const n = Math.min(90, Math.floor(W * H / 16000));
+  stars = Array.from({length: n}, () => ({
+    x: Math.random() * W, y: Math.random() * H,
+    vx: (Math.random() - .5) * .35, vy: (Math.random() - .5) * .35,
+    r: Math.random() * 1.6 + .6,
+  }));
+}
+let mouse = {x: -999, y: -999};
+addEventListener("mousemove", e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+function drawBg(){
+  bctx.clearRect(0, 0, W, H);
+  const light = document.documentElement.dataset.theme === "light";
+  const dotColor  = light ? "rgba(60,70,130," : "rgba(170,180,255,";
+  const lineColor = light ? "rgba(90,100,170," : "rgba(124,108,255,";
+  for (const s of stars){
+    s.x += s.vx; s.y += s.vy;
+    if (s.x < 0 || s.x > W) s.vx *= -1;
+    if (s.y < 0 || s.y > H) s.vy *= -1;
+    const dm = Math.hypot(s.x - mouse.x, s.y - mouse.y);
+    if (dm < 130){ // 鼠标附近轻微推开
+      s.x += (s.x - mouse.x) / dm * .6;
+      s.y += (s.y - mouse.y) / dm * .6;
+    }
+    bctx.beginPath();
+    bctx.arc(s.x, s.y, s.r, 0, 7);
+    bctx.fillStyle = dotColor + (light ? ".55)" : ".8)");
+    bctx.fill();
+  }
+  for (let i = 0; i < stars.length; i++){
+    for (let j = i + 1; j < stars.length; j++){
+      const d = Math.hypot(stars[i].x - stars[j].x, stars[i].y - stars[j].y);
+      if (d < 115){
+        bctx.beginPath();
+        bctx.moveTo(stars[i].x, stars[i].y);
+        bctx.lineTo(stars[j].x, stars[j].y);
+        bctx.strokeStyle = lineColor + (0.32 * (1 - d / 115)).toFixed(3) + ")";
+        bctx.lineWidth = 1;
+        bctx.stroke();
+      }
+    }
+  }
+  requestAnimationFrame(drawBg);
+}
+initBg(); drawBg();
+addEventListener("resize", initBg);
+
+/* ---------- 特效画布：点击烟花 + 彩带 ---------- */
+const fx = $("#fx"), fctx = fx.getContext("2d");
+let parts = [];
+function initFx(){
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  fx.width = innerWidth * dpr; fx.height = innerHeight * dpr;
+  fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+initFx(); addEventListener("resize", initFx);
+const PALETTE = ["#7c6cff", "#37e2d5", "#ff7ac6", "#ffd166", "#8ef6a3"];
+function burst(x, y, n = 14, power = 4, colors = PALETTE){
+  for (let i = 0; i < n; i++){
+    const a = Math.random() * Math.PI * 2, v = Math.random() * power + 1;
+    parts.push({type:"dot", x, y, vx: Math.cos(a)*v, vy: Math.sin(a)*v,
+      life: 1, decay: .018 + Math.random()*.02,
+      color: colors[Math.floor(Math.random()*colors.length)], size: 2 + Math.random()*3});
+  }
+}
+function confettiRain(n = 130){
+  for (let i = 0; i < n; i++){
+    parts.push({type:"rect", x: Math.random()*innerWidth, y: -20 - Math.random()*innerHeight*.4,
+      vx: (Math.random()-.5)*1.6, vy: 2 + Math.random()*3, life: 1, decay: .004,
+      rot: Math.random()*Math.PI, vr: (Math.random()-.5)*.25,
+      color: PALETTE[Math.floor(Math.random()*PALETTE.length)],
+      w: 6 + Math.random()*6, h: 4 + Math.random()*4});
+  }
+}
+function drawFx(){
+  fctx.clearRect(0, 0, innerWidth, innerHeight);
+  parts = parts.filter(p => p.life > 0 && p.y < innerHeight + 30);
+  for (const p of parts){
+    p.life -= p.decay;
+    p.x += p.vx; p.y += p.vy;
+    if (p.type === "dot"){ p.vy += .07; }
+    else { p.vy += .04; p.vx += Math.sin(p.y / 30) * .05; p.rot += p.vr; }
+    fctx.globalAlpha = Math.max(p.life, 0);
+    fctx.fillStyle = p.color;
+    if (p.type === "dot"){
+      fctx.beginPath(); fctx.arc(p.x, p.y, p.size, 0, 7); fctx.fill();
+    } else {
+      fctx.save(); fctx.translate(p.x, p.y); fctx.rotate(p.rot);
+      fctx.fillRect(-p.w/2, -p.h/2, p.w, p.h); fctx.restore();
+    }
+  }
+  fctx.globalAlpha = 1;
+  requestAnimationFrame(drawFx);
+}
+drawFx();
+addEventListener("click", e => burst(e.clientX, e.clientY, 12, 3.2));
+
+/* ---------- 鼠标光晕 ---------- */
+const glowEl = $("#cursorGlow");
+let gx = innerWidth/2, gy = innerHeight/2, tx = gx, ty = gy;
+addEventListener("mousemove", e => { tx = e.clientX; ty = e.clientY; });
+(function glowLoop(){
+  gx += (tx - gx) * .13; gy += (ty - gy) * .13;
+  glowEl.style.transform = `translate(${gx - 210}px, ${gy - 210}px)`;
+  requestAnimationFrame(glowLoop);
+})();
+
+/* ---------- 打字机 ---------- */
+let ri = 0, ci = 0, deleting = false;
+const typedEl = $("#typed");
+(function type(){
+  const word = CONFIG.roles[ri];
+  if (!deleting){
+    ci++; typedEl.textContent = word.slice(0, ci);
+    if (ci === word.length){ deleting = true; setTimeout(type, 1900); return; }
+    setTimeout(type, 115);
+  } else {
+    ci--; typedEl.textContent = word.slice(0, ci);
+    if (ci === 0){ deleting = false; ri = (ri + 1) % CONFIG.roles.length; setTimeout(type, 420); return; }
+    setTimeout(type, 45);
+  }
+})();
+
+/* ---------- 问候语 & 存活天数 ---------- */
+(function greet(){
+  const h = new Date().getHours();
+  let g = "👋 你好呀，欢迎来到我的小宇宙";
+  if (h < 5)       g = "🌙 深夜好，夜猫子（我们是一国的）";
+  else if (h < 9)  g = "🌅 早上好，新的一天也要元气满满";
+  else if (h < 12) g = "☀️ 上午好，欢迎来到我的小宇宙";
+  else if (h < 14) g = "🍚 中午好，吃饱了才有力气逛网页";
+  else if (h < 18) g = "🌤️ 下午好，来杯奶茶慢慢看";
+  else if (h < 23) g = "🌆 晚上好，欢迎来到我的小宇宙";
+  else             g = "🌙 夜深了，看完早点休息哦";
+  $("#greeting").textContent = g;
+})();
+(function alive(){
+  const born = new Date(CONFIG.birthday);
+  if (isNaN(born)) return;
+  const days = Math.floor((Date.now() - born) / 864e5);
+  $("#daysAlive").textContent = `🎂 已存活 ${days.toLocaleString()} 天`;
+})();
+
+/* ---------- 滚动浮现 / 技能条 / 导航高亮 ---------- */
+const io = new IntersectionObserver(entries => {
+  entries.forEach(en => {
+    if (!en.isIntersecting) return;
+    en.target.classList.add("visible");
+    en.target.querySelectorAll?.(".bar-fill").forEach(b => b.style.width = b.dataset.w + "%");
+    io.unobserve(en.target);
+  });
+}, {threshold: .15});
+$$(".reveal").forEach(el => io.observe(el));
+
+const navLinks = [...$$(".nav-link")];
+const secIO = new IntersectionObserver(entries => {
+  entries.forEach(en => {
+    if (en.isIntersecting){
+      navLinks.forEach(l => l.classList.toggle("active", l.getAttribute("href") === "#" + en.target.id));
+    }
+  });
+}, {rootMargin: "-40% 0px -55% 0px"});
+$$("section[id]").forEach(s => secIO.observe(s));
+
+/* ---------- 滚动进度 / 回到顶部 ---------- */
+const progress = $("#scrollProgress"), backTop = $("#backTop");
+addEventListener("scroll", () => {
+  const max = document.documentElement.scrollHeight - innerHeight;
+  progress.style.width = (scrollY / max * 100) + "%";
+  backTop.classList.toggle("show", scrollY > 600);
+}, {passive: true});
+backTop.addEventListener("click", () => scrollTo({top: 0, behavior: "smooth"}));
+
+/* ---------- 3D 倾斜卡片 ---------- */
+$$(".tilt").forEach(card => {
+  card.addEventListener("mousemove", e => {
+    const r = card.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width - .5;
+    const y = (e.clientY - r.top) / r.height - .5;
+    card.style.transform = `perspective(800px) rotateX(${-y*8}deg) rotateY(${x*8}deg) translateY(-4px)`;
+  });
+  card.addEventListener("mouseleave", () => card.style.transform = "");
+});
+
+/* ---------- Toast ---------- */
+let toastTimer;
+function toast(msg){
+  const t = $("#toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
+}
+
+/* ---------- 今日运势 ---------- */
+const FORTUNES = [
+  "大吉 · 今天适合大干一场 💪",
+  "大吉 · 想买的东西，买它！🛍️",
+  "中吉 · 平稳的一天，摸鱼要低调 🐟",
+  "中吉 · 有点小确幸正在路上 🍀",
+  "小吉 · 宜早睡，忌熬夜 😴",
+  "小吉 · 会遇到一件让你笑出声的事 😄",
+  "隐藏 · 今天的手气适合再来一抽 🔁",
+  "吉 · 你点赞的博主会更新哦 ✨",
+];
+const fortuneBtn = $("#fortuneBtn"), fortuneEl = $("#fortuneResult");
+fortuneBtn.addEventListener("click", () => {
+  fortuneBtn.disabled = true;
+  fortuneEl.classList.remove("settled");
+  let ticks = 0;
+  const spin = setInterval(() => {
+    fortuneEl.textContent = FORTUNES[Math.floor(Math.random() * FORTUNES.length)];
+    if (++ticks > 13){
+      clearInterval(spin);
+      const r = FORTUNES[Math.floor(Math.random() * FORTUNES.length)];
+      fortuneEl.textContent = r;
+      fortuneEl.classList.add("settled");
+      fortuneBtn.disabled = false;
+      const rc = fortuneEl.getBoundingClientRect();
+      burst(rc.left + rc.width/2, rc.top + rc.height/2, 22, 4.5);
+    }
+  }, 85);
+});
+
+/* ---------- 点赞 ---------- */
+const likeBtn = $("#likeBtn"), likeLabel = $("#likeLabel");
+let likes = +localStorage.getItem("hk_likes") || 0;
+function renderLikes(){
+  likeLabel.textContent = likes === 0
+    ? "还没有人点过赞（等你哦）"
+    : likes === 1 ? "第一个赞来自你自己 😏"
+    : `已有 ${likes} 个赞，谢谢你 ❤️`;
+}
+renderLikes();
+likeBtn.addEventListener("click", e => {
+  likes++; localStorage.setItem("hk_likes", likes); renderLikes();
+  likeBtn.classList.remove("pop"); void likeBtn.offsetWidth; likeBtn.classList.add("pop");
+  burst(e.clientX, e.clientY, 34, 5.5, ["#ff7ac6", "#ff5b9f", "#ffd166"]);
+});
+
+/* ---------- 微信卡片 ---------- */
+$("#wechatCard").addEventListener("click", () => {
+  toast("💬 微信号：" + CONFIG.wechat );
+});
+
+/* ---------- 彩蛋 2：Konami 派对模式 ---------- */
+const KONAMI = ["arrowup","arrowup","arrowdown","arrowdown","arrowleft","arrowright","arrowleft","arrowright","b","a"];
+let kIdx = 0;
+addEventListener("keydown", e => {
+  const k = e.key.toLowerCase();
+  kIdx = (k === KONAMI[kIdx]) ? kIdx + 1 : (k === KONAMI[0] ? 1 : 0);
+  if (kIdx === KONAMI.length){
+    kIdx = 0;
+    document.body.classList.add("party");
+    confettiRain(160);
+    toast("🎊 彩蛋 2/3：派对模式开启！你就是隐藏高手");
+    setTimeout(() => document.body.classList.remove("party"), 9000);
+  }
+});
+
+/* ---------- 彩蛋 3：连点 Logo ---------- */
+let logoClicks = 0, logoTimer;
+$("#logo").addEventListener("click", e => {
+  e.preventDefault();
+  scrollTo({top: 0, behavior: "smooth"});
+  if (++logoClicks >= 5){
+    logoClicks = 0;
+    const logo = $("#logo");
+    logo.classList.remove("spin"); void logo.offsetWidth; logo.classList.add("spin");
+    confettiRain(90);
+    toast("👑 彩蛋 3/3：居然被你点出来了，耐心满分！");
+  }
+  clearTimeout(logoTimer);
+  logoTimer = setTimeout(() => logoClicks = 0, 1600);
+});
+
+/* ---------- 彩蛋 1：控制台 ---------- */
+console.log("%c👑 欢迎 inspect Hu-king 的小宇宙！彩蛋 1/3 到手 👀",
+  "font-size:15px;font-weight:bold;color:#7c6cff;padding:8px 4px;");
+console.log("%c想一起做点有趣的东西？页面底部的邮箱在等你～",
+  "color:#9aa3c7;font-size:12px;");
+
+/* ---------- 离开页面换标题 ---------- */
+const realTitle = document.title;
+document.addEventListener("visibilitychange", () => {
+  document.title = document.hidden ? "😢 别走…页面在等你" : realTitle;
+});
+
+/* ---------- 访问计数（仅本地） ---------- */
+const visits = (+localStorage.getItem("hk_visits") || 0) + 1;
+localStorage.setItem("hk_visits", visits);
+$("#visitCount").textContent = visits === 1
+  ? "🎉 欢迎首次光临！（这个数字只存在你自己的浏览器里）"
+  : `😎 这个页面已被你光顾 ${visits} 次`;
+</script>
+</body>
+</html>
